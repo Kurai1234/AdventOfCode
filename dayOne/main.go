@@ -1,8 +1,8 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
-	"log"
 	"math"
 	"sort"
 	"strconv"
@@ -11,60 +11,77 @@ import (
 	"github.com/kurai1234/advent-of-code/utils"
 )
 
+func ReadColumns(scanner *bufio.Scanner) ([]int, []int, error) {
+	columnOne, columnTwo := make([]int, 0), make([]int, 0)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			break
+		}
+		filteredLine := make([]string, 0)
+		for _, val := range strings.Split(line, " ") {
+			if val == "" {
+				continue
+			}
+			filteredLine = append(filteredLine, val)
+		}
+
+		if num, err := strconv.Atoi(filteredLine[0]); err != nil {
+			return nil, nil, err
+		} else {
+			columnOne = append(columnOne, num)
+		}
+
+		if num, err := strconv.Atoi(filteredLine[len(filteredLine)-1]); err != nil {
+			return nil, nil, err
+		} else {
+			columnTwo = append(columnTwo, num)
+		}
+	}
+	return columnOne, columnTwo, nil
+}
+
 func main() {
 	scanner, err := utils.ScanFile("./dayOne/input.txt")
 
 	if err != nil {
-		log.Fatal(err)
-	}
-	var inputs [][]string
-	var input []string
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
-			inputs = append(inputs, input)
-			input = []string{}
-			continue
-		}
-		input = append(input, line)
-	}
-	if len(input) > 0 {
-		inputs = append(inputs, input)
+		panic(err)
 	}
 
-	for index, firstEntry := range inputs {
-		columnOne := make([]int, 0)
-		columnTwo := make([]int, 0)
-		for _, row := range firstEntry {
-			var filteredRow []int
-			for _, val := range strings.Split(row, " ") {
-				if val == "" {
-					continue
-				}
+	columnOne, columnTwo, err := ReadColumns(scanner)
 
-				if val, err := strconv.Atoi(val); err != nil {
-					log.Fatal("strcon error:", err.Error())
-				} else {
-					filteredRow = append(filteredRow, val)
-				}
+	if err != nil {
+		panic(err)
+	}
+
+	if len(columnOne) != len(columnTwo) {
+		panic(fmt.Errorf("column does not match"))
+	}
+
+	// Question 1
+	sum := 0
+
+	sort.Ints(columnOne)
+	sort.Ints(columnTwo)
+
+	for idx := range columnOne {
+		sum += int(math.Abs(float64(columnOne[idx]) - float64(columnTwo[idx])))
+	}
+	fmt.Printf("Test One: %d \n", sum)
+
+	sum = 0
+
+	for _, colOne := range columnOne {
+		occur := 0
+		for _, colTwo := range columnTwo {
+			if colOne == colTwo {
+				occur += 1
 			}
-			if len(filteredRow) == 0 {
-				continue
-			}
-			columnOne = append(columnOne, filteredRow[0])
-			columnTwo = append(columnTwo, filteredRow[len(filteredRow)-1])
 		}
-
-		sort.Ints(columnOne)
-		sort.Ints(columnTwo)
-
-		if len(columnOne) != len(columnTwo) {
-			log.Fatal("column do not match")
-		}
-		sum := 0
-		for i := 0; i < len(columnOne); i++ {
-			sum += int(math.Max(float64(columnOne[i]), float64(columnTwo[i]))) - int(math.Min(float64(columnOne[i]), float64(columnTwo[i])))
-		}
-		fmt.Printf("Test: %d, distance: %d", index, sum)
+		sum += occur * colOne
 	}
+
+	fmt.Printf("Test Two: %d \n", sum)
+
 }
